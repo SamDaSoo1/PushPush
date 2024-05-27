@@ -1,21 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
-public class SetMap : MonoBehaviour
+public class SetMap_Custom : MonoBehaviour
 {
-    [SerializeField] StageText stageText;
+    [SerializeField] StageText_Custom stageText;
     [SerializeField] List<GameObject> blocks;
     [SerializeField] List<Sprite> blockSprites;
     [SerializeField] List<GameObject> cloneBlock;
     [SerializeField] List<Vector3> blockPos;
 
-    public bool StageDataLoad_Complete {  get; private set; }
+    public bool StageDataLoad_Complete { get; private set; }
 
     private void Awake()
     {
@@ -32,15 +28,15 @@ public class SetMap : MonoBehaviour
             blockSprites.Add(Resources.Load<Sprite>("pushpush" + i.ToString()));
         }
 
-        if(PlayerPrefs.HasKey("Stage") == false)
+        if (PlayerPrefs.HasKey("Custom Stage") == false)
         {
-            PlayerPrefs.SetInt("Stage", 1);
+            PlayerPrefs.SetInt("Custom Stage", 1);
         }
     }
 
     private void Start()
     {
-        stageText = FindObjectOfType<StageText>();
+        stageText = FindObjectOfType<StageText_Custom>();
         StageDataLoad();
     }
 
@@ -63,7 +59,7 @@ public class SetMap : MonoBehaviour
                 sr.sprite = null;
                 sr.sortingOrder = 0;
             }
-            
+
             if (h != null) { DestroyImmediate(h); }
             if (b != null) { DestroyImmediate(b); }
             if (p != null) { DestroyImmediate(p); }
@@ -77,7 +73,7 @@ public class SetMap : MonoBehaviour
         cloneBlock.Clear();
     }
 
-    public void StageDataLoad()
+    public bool StageDataLoad()
     {
         GameObject go;
         string filePath;
@@ -85,16 +81,22 @@ public class SetMap : MonoBehaviour
         stageText.TextUpdate();
 
         // JSON 파일의 경로
-        filePath = "MapData/Original/Stage" + PlayerPrefs.GetInt("Stage").ToString();
+        filePath = "MapData/Custom/Stage" + PlayerPrefs.GetInt("Custom Stage").ToString();
         // JSON 파일 로드
         TextAsset jsonFile = Resources.Load<TextAsset>(filePath);
+
+        if (jsonFile == null)
+        {
+            return false;
+        }
+        
         // JSON 파일 내용 문자열로 변환
         string jsonText = jsonFile.text;
         StageData sd = JsonUtility.FromJson<StageData>(jsonText);
 
         List<int> blockIdx = sd.idx;
         List<BlockType> blockType = sd.blockType;
-        for(int i = 0; i < blockIdx.Count; i++)
+        for (int i = 0; i < blockIdx.Count; i++)
         {
             BlockType bt = blockType[i];
 
@@ -172,5 +174,6 @@ public class SetMap : MonoBehaviour
         }
 
         StageDataLoad_Complete = true;
+        return true;
     }
 }

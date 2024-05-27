@@ -1,20 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEditor.ShaderData;
 
-public class Administrator : MonoBehaviour
+public class Administrator_Custom : MonoBehaviour
 {
+    StageText_Custom stageText;
     [SerializeField] List<BlockType> blockTypes;
-    [SerializeField] SetMap setMap;
+    [SerializeField] SetMap_Custom setMap;
     [SerializeField] Player player;
     [SerializeField] List<Ball> balls;
     [SerializeField] List<Home> homes;
     [SerializeField] List<List<BlockType>> past;
     [SerializeField] Step step;
     [SerializeField] Heart heart;
+    [SerializeField] GameObject stageUpButton;
+    [SerializeField] GameObject stageDownButton;
+    [SerializeField] GameObject buttonBlock;
 
     const int up = -13;
     const int down = 13;
@@ -23,11 +24,13 @@ public class Administrator : MonoBehaviour
 
     void Start()
     {
-        setMap = FindObjectOfType<SetMap>();
+        stageText = FindObjectOfType<StageText_Custom>();
+        setMap = FindObjectOfType<SetMap_Custom>();
         StartCoroutine(WaitSetMap());
         past = new List<List<BlockType>>();
-        step = GameObject.Find("Canvas").GetComponent<Step>();
-        heart = GameObject.Find("Canvas").GetComponent<Heart>();
+        step = FindObjectOfType<Step>();
+        heart = FindObjectOfType<Heart>();
+        buttonBlock.SetActive(false);
     }
 
     void StageClearCheck()
@@ -38,45 +41,67 @@ public class Administrator : MonoBehaviour
             if (home.sr.sprite.name == "pushpush2")
             {
                 return;
-            }   
+            }
         }
-
-        StartCoroutine(NextStage());
+        NextStage();
     }
 
-    IEnumerator NextStage()
+    public void PrevStage()
     {
         heart.Init();
         step.Reset_Step();
         setMap.StageInit();
-        yield return null;
-
         player = null;
         blockTypes.Clear();
         balls.Clear();
         homes.Clear();
         past.Clear();
-        yield return null;
+        PlayerPrefs.SetInt("Custom Stage", PlayerPrefs.GetInt("Custom Stage") - 1);
 
-        PlayerPrefs.SetInt("Stage", PlayerPrefs.GetInt("Stage") + 1);
+        if (setMap.StageDataLoad())
+            StartCoroutine(WaitSetMap());
+    }
 
-        setMap.StageDataLoad();
-        yield return null;
+    public void NextStage()
+    {
+        heart.Init();
+        step.Reset_Step();
+        setMap.StageInit();
+        player = null;
+        blockTypes.Clear();
+        balls.Clear();
+        homes.Clear();
+        past.Clear();
+        PlayerPrefs.SetInt("Custom Stage", PlayerPrefs.GetInt("Custom Stage") + 1);
+     
+        if (PlayerPrefs.GetInt("Custom Stage") > 50)
+        {
+            PlayerPrefs.SetInt("Custom Stage", 1);
+            buttonBlock.SetActive(true);
+            FindObjectOfType<Background>().BackgroundChange();
+            stageUpButton.SetActive(false);
+            stageDownButton.SetActive(false);
+            heart.Fill_All_Heart();
+            stageText.Congratulations();
+            step.TheEnd();
+            return;
+        }
 
-        StartCoroutine(WaitSetMap());
+        if(setMap.StageDataLoad())
+            StartCoroutine(WaitSetMap());
     }
 
     IEnumerator WaitSetMap()
     {
         yield return new WaitUntil(() => setMap.StageDataLoad_Complete == true);
-
-        GameObject stage = GameObject.Find("Stage");
+        
+        GameObject stage = GameObject.Find("Custom Stage");
         foreach (Transform child in stage.transform)
         {
-            if (child.gameObject.name.IndexOf("(Clone)") > 0)
+            if (child.gameObject.name == "New Game Object")
                 break;
 
-            if (child.GetComponent<SpriteRenderer>().sprite == null || 
+            if (child.GetComponent<SpriteRenderer>().sprite == null ||
                 child.GetComponent<SpriteRenderer>().sprite.name == "pushpush5")
                 blockTypes.Add(BlockType.None);
             else if (child.GetComponent<SpriteRenderer>().sprite.name == "pushpush0")
@@ -106,9 +131,9 @@ public class Administrator : MonoBehaviour
 
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(KeyCode.UpArrow))
             MovePlayer(up);
-         
+
         if (Input.GetKeyDown(KeyCode.DownArrow))
             MovePlayer(down);
 
@@ -120,10 +145,45 @@ public class Administrator : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Z))
             TimeLeap();
+
+        // 나중에 없앨 것.
+        if (Input.GetKeyDown(KeyCode.P))
+            NextStage();
+    }
+
+    public void Move(ButtonType type)
+    {
+        switch (type)
+        {
+            case ButtonType.UpArrow:
+                MovePlayer(up);
+                break;
+            case ButtonType.DownArrow:
+                MovePlayer(down);
+                break;
+            case ButtonType.LeftArrow:
+                MovePlayer(left);
+                break;
+            case ButtonType.RightArrow:
+                MovePlayer(right);
+                break;
+            case ButtonType.TimeLeap:
+                TimeLeap();
+                break;
+            default:
+                Debug.LogError("Move Error");
+                break;
+        }
     }
 
     void TimeLeap()
     {
+        if (player == null)
+        {
+            NextStage();
+            return;
+        }
+
         if (past.Count == 0) { return; }
 
         heart.Empty_Heart();
@@ -152,6 +212,12 @@ public class Administrator : MonoBehaviour
 
     void MovePlayer(int dir)
     {
+        if (player == null)
+        {
+            NextStage();
+            return;
+        }          
+
         SaveThePast();
 
         // 가려는 방향에 벽이 있다면 못감
@@ -165,13 +231,13 @@ public class Administrator : MonoBehaviour
         if (blockTypes[player.Index + dir] == BlockType.Ball)
         {
             // 만약 공이 가려는 방향으로 2개이상 붙어있거나 공 너머에 벽이 있거나 빨간 집이 있다면 밀지못함
-            if (blockTypes[player.Index + dir + dir] == BlockType.Ball || 
+            if (blockTypes[player.Index + dir + dir] == BlockType.Ball ||
                 blockTypes[player.Index + dir + dir] == BlockType.Wall ||
                 blockTypes[player.Index + dir + dir] == BlockType.Destroyed_Home)
             {
                 past.RemoveAt(past.Count - 1);
                 return;
-            }  
+            }
 
             blockTypes[player.Index + dir] = BlockType.None;
             blockTypes[player.Index + dir + dir] = BlockType.Ball;
@@ -205,8 +271,8 @@ public class Administrator : MonoBehaviour
         if (blockTypes[player.Index + dir] == BlockType.Destroyed_Home)
         {
             // 빨간 집 너머에 벽이 있거나 공이 있거나 빨간 집이 있으면 못움직임
-            if (blockTypes[player.Index + dir + dir] == BlockType.Wall || 
-                blockTypes[player.Index + dir + dir] == BlockType.Ball || 
+            if (blockTypes[player.Index + dir + dir] == BlockType.Wall ||
+                blockTypes[player.Index + dir + dir] == BlockType.Ball ||
                 blockTypes[player.Index + dir + dir] == BlockType.Destroyed_Home)
             {
                 past.RemoveAt(past.Count - 1);

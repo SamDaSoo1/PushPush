@@ -30,3 +30,12 @@ public enum MoveType
     Current,
     None
 }
+
+public enum ButtonType
+{
+    UpArrow,
+    DownArrow,
+    LeftArrow,
+    RightArrow,
+    TimeLeap
+}

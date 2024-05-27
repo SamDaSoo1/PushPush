@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
-    [field: SerializeField]
-    public int Index { get; set; } = 0;
+    [field : SerializeField] 
+    public int Index { get; set; }
 
     SpriteRenderer sr;
 
@@ -23,6 +23,7 @@ public class Ball : MonoBehaviour
 
     private void Awake()
     {
+        
         sr = GetComponent<SpriteRenderer>();
         past = new List<PreviousLocation>();
         pastSprite = new List<PreviousSprite>();

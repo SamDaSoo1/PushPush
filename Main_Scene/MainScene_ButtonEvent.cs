@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -5,20 +6,23 @@ using UnityEngine.UI;
 
 public class MainScene_ButtonEvent : MonoBehaviour
 {
-    [SerializeField] Text originalGameText;
-    [SerializeField] Text customGameText;
-    [SerializeField] Text cMapEditorText;
-    [SerializeField] Text helpText;
+    [SerializeField] TextMeshProUGUI originalGameText;
+    [SerializeField] TextMeshProUGUI customGameText;
+    [SerializeField] TextMeshProUGUI cMapEditorText;
+    [SerializeField] TextMeshProUGUI helpText;
+    [SerializeField] GameObject helpWindow;
 
     float textOffset = 15;
 
 
     private void Start()
     {
-        originalGameText = transform.GetChild(0).GetComponentInChildren<Text>();
-        customGameText = transform.GetChild(1).GetComponentInChildren<Text>();
-        cMapEditorText = transform.GetChild(2).GetComponentInChildren<Text>();
-        helpText = transform.GetChild(3).GetComponentInChildren<Text>();
+        originalGameText = transform.GetChild(0).GetComponentInChildren<TextMeshProUGUI>();
+        customGameText = transform.GetChild(1).GetComponentInChildren<TextMeshProUGUI>();
+        cMapEditorText = transform.GetChild(2).GetComponentInChildren<TextMeshProUGUI>();
+        helpText = transform.GetChild(3).GetComponentInChildren<TextMeshProUGUI>();
+        helpWindow = transform.GetChild(4).gameObject;
+        helpWindow.SetActive(false);
     }
 
     public void OriginalGameButton_OnPointerDown()
@@ -62,5 +66,6 @@ public class MainScene_ButtonEvent : MonoBehaviour
     public void HelpButton_OnPointerUp()
     {
         helpText.rectTransform.anchoredPosition = new Vector2(helpText.rectTransform.anchoredPosition.x, helpText.rectTransform.anchoredPosition.y + textOffset);
+        helpWindow.SetActive(true);
     }
 }

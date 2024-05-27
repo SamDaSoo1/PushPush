@@ -1,21 +1,25 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class EditorScene_ButtonEvent : MonoBehaviour
 {
+    StageText_Editor stageText;
     [SerializeField] GameObject SelectBlock;
     [SerializeField] SpriteRenderer palette;
     [SerializeField] List<Sprite> sprites;
-    [SerializeField] List<GameObject> blocks;
-    [SerializeField] Text saveText;
+    [SerializeField] List<SpriteRenderer> blocks;
+    [SerializeField] TextMeshProUGUI saveText;
     [SerializeField] StageData stageData;
-    [SerializeField] int stageNum;
+    [SerializeField] TextMeshProUGUI saveTmp;
+    StageLoad stageLoad;
     
 
     const float dist = 0.7f;
@@ -29,6 +33,7 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
     private void Start()
     {
+        stageText = FindObjectOfType<StageText_Editor>();
         SelectBlock = GameObject.FindWithTag("SelectBlock");
         SelectBlock.transform.position = new Vector3(-3.8f, 0f, 0f);
         palette = SelectBlock.GetComponent<SpriteRenderer>();
@@ -39,15 +44,23 @@ public class EditorScene_ButtonEvent : MonoBehaviour
             sprites.Add(Resources.Load<Sprite>("pushpush" + i.ToString()));
         }
 
-        blocks = new List<GameObject>();
-        blocks = GameObject.FindGameObjectsWithTag("Block").ToList();
+        blocks = new List<SpriteRenderer>();
+        List<GameObject> goList = GameObject.FindGameObjectsWithTag("Block").ToList();
+        foreach(GameObject go in goList)
+        {
+            blocks.Add(go.GetComponent<SpriteRenderer>());
+        }
 
-        saveText = GameObject.Find("Save Button").GetComponentInChildren<Text>();
+        saveText = GameObject.Find("Save Button").GetComponentInChildren<TextMeshProUGUI>();
+        stageLoad = FindObjectOfType<StageLoad>();
+        stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
+        saveTmp = transform.Find("SaveTmp").GetComponent<TextMeshProUGUI>();
+        saveTmp.enabled = false;
     }
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(KeyCode.UpArrow))
             UpArrowClick();
         if (Input.GetKeyDown(KeyCode.DownArrow))
             DownArrowClick();
@@ -71,60 +84,69 @@ public class EditorScene_ButtonEvent : MonoBehaviour
     {
         saveText.rectTransform.anchoredPosition = new Vector2(saveText.rectTransform.anchoredPosition.x, saveText.rectTransform.anchoredPosition.y + textOffset);
 
-        if(stageNum > 0)
+        if(saveTmp.enabled == true) { return; }
+
+        stageData.idx.Clear();
+        stageData.blockType.Clear();
+
+        foreach (SpriteRenderer block in blocks)
         {
-            foreach(GameObject block in blocks)
+            Sprite blockSprite = block.sprite;
+            if (blockSprite == null)
+                continue;
+
+            switch (blockSprite.name)
             {
-                Sprite blockSprite = block.GetComponent<SpriteRenderer>().sprite;
-                if (blockSprite == null)
-                    continue;
-                       
-                switch(blockSprite.name)
-                {
-                    case "pushpush0":
-                        stageData.idx.Add(int.Parse(block.name));
-                        stageData.blockType.Add(BlockType.Player);
-                        break;
-                    case "pushpush1":
-                        stageData.idx.Add(int.Parse(block.name));
-                        stageData.blockType.Add(BlockType.Ball);
-                        break;
-                    case "pushpush2":
-                        stageData.idx.Add(int.Parse(block.name));
-                        stageData.blockType.Add(BlockType.Home);
-                        break;
-                    case "pushpush3":
-                        stageData.idx.Add(int.Parse(block.name));
-                        stageData.blockType.Add(BlockType.Destroyed_Home);
-                        break;
-                    case "pushpush4":
-                        stageData.idx.Add(int.Parse(block.name));
-                        stageData.blockType.Add(BlockType.Wall);
-                        break;
-                    case "pushpush5":
-                        stageData.idx.Add(int.Parse(block.name));
-                        stageData.blockType.Add(BlockType.Floor);
-                        break;
-                    default:
-                        break;
-                }
+                case "pushpush0":
+                    stageData.idx.Add(int.Parse(block.name));
+                    stageData.blockType.Add(BlockType.Player);
+                    break;
+                case "pushpush1":
+                    stageData.idx.Add(int.Parse(block.name));
+                    stageData.blockType.Add(BlockType.Ball);
+                    break;
+                case "pushpush2":
+                    stageData.idx.Add(int.Parse(block.name));
+                    stageData.blockType.Add(BlockType.Home);
+                    break;
+                case "pushpush3":
+                    stageData.idx.Add(int.Parse(block.name));
+                    stageData.blockType.Add(BlockType.Destroyed_Home);
+                    break;
+                case "pushpush4":
+                    stageData.idx.Add(int.Parse(block.name));
+                    stageData.blockType.Add(BlockType.Wall);
+                    break;
+                case "pushpush5":
+                    stageData.idx.Add(int.Parse(block.name));
+                    stageData.blockType.Add(BlockType.Floor);
+                    break;
+                default:
+                    break;
             }
-
-            // ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
-            string path = Path.Combine(Application.dataPath + "/Resources/MapData/Original", "Stage" + stageNum.ToString() + ".json");
-            // ToJsonï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ JSONï¿½ï¿½ï¿½Â·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½  
-            string jsonData = JsonUtility.ToJson(stageData, true);
-            // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
-            File.WriteAllText(path, jsonData);
-            print("ï¿½ï¿½ï¿½ï¿½ ï¿½Ï·ï¿½");
-
-            /// ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¼Å©ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
-            //if (File.Exists(path) == false) { }
         }
-        else
+
+        // µ¥ÀÌÅÍ¸¦ ÀúÀåÇÒ °æ·Î ÁöÁ¤
+        string path = Path.Combine(Application.dataPath + "/Resources/MapData/Custom", "Stage" + PlayerPrefs.GetInt("Editor Stage") + ".json");
+        // ToJsonÀ» »ç¿ëÇÏ¸é JSONÇüÅÂ·Î Æ÷¸äÆÃµÈ ¹®ÀÚ¿­ÀÌ »ý¼ºµÈ´Ù  
+        string jsonData = JsonUtility.ToJson(stageData, true);
+        // ÆÄÀÏ »ý¼º ¹× ÀúÀå
+        File.WriteAllText(path, jsonData);
+        
+        if(saveTmp.enabled == false)
         {
-            print("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: stageNumï¿½ï¿½ ï¿½Ô·ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½ï¿½ï¿½.");
+            saveTmp.enabled = true;
+            StartCoroutine(SaveTmp());
         }
+
+        /// ÀÌ¹Ì »ý¼ºµÈ ÆÄÀÏÀÎÁö Ã¼Å©ÇÏ°í ½ÍÀ¸¸é »ç¿ë
+        // if (File.Exists(path) == true) { }
+    }
+
+    IEnumerator SaveTmp()
+    {
+        yield return new WaitForSeconds(1.5f);
+        saveTmp.enabled = false;
     }
 
     public void Palette1()
@@ -199,11 +221,45 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
     public void DrawClick()
     {
-        blocks[idx].GetComponent<SpriteRenderer>().sprite = palette.sprite;
+        if (palette.sprite == null) { return; }
+
+        blocks[idx].sprite = palette.sprite;
     }
 
     public void EraseClick()
     {
-        blocks[idx].GetComponent<SpriteRenderer>().sprite = null;
+        blocks[idx].sprite = null;
+    }
+
+    public void AllDeleteClick()
+    {
+        for(int i = 0; i < blocks.Count; i++)
+        {
+            blocks[i].sprite = null;
+        }
+    }
+
+    public void StageUpButton()
+    {
+        if (PlayerPrefs.GetInt("Editor Stage") == 50)
+            return;
+
+        int stageNum = PlayerPrefs.GetInt("Editor Stage");
+        PlayerPrefs.SetInt("Editor Stage", stageNum + 1);
+        stageText.TextUpdate();
+
+        stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
+    }
+
+    public void StageDownButton()
+    {
+        if (PlayerPrefs.GetInt("Editor Stage") == 1)
+            return;
+
+        int stageNum = PlayerPrefs.GetInt("Editor Stage");
+        PlayerPrefs.SetInt("Editor Stage", stageNum - 1);
+        stageText.TextUpdate();
+
+        stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
     }
 }

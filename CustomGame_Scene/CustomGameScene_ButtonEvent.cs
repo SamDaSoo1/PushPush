@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class OriginalGameScene_ButtonEvent : MonoBehaviour
+public class CustomGameScene_ButtonEvent : MonoBehaviour
 {
-    Administrator administrator;
-
+    Administrator_Custom administrator;
 
     private void Start()
     {
-        administrator = FindObjectOfType<Administrator>();
+        administrator = FindObjectOfType<Administrator_Custom>();
     }
 
     public void UpArrowClick()
@@ -45,7 +44,7 @@ public class OriginalGameScene_ButtonEvent : MonoBehaviour
 
     public void StageUpButton()
     {
-        if (PlayerPrefs.GetInt("Stage") == 50)
+        if (PlayerPrefs.GetInt("Custom Stage") == 50)
             return;
 
         administrator.NextStage();
@@ -53,7 +52,7 @@ public class OriginalGameScene_ButtonEvent : MonoBehaviour
 
     public void StageDownButton()
     {
-        if (PlayerPrefs.GetInt("Stage") == 1)
+        if (PlayerPrefs.GetInt("Custom Stage") == 1)
             return;
 
         administrator.PrevStage();
