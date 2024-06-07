@@ -4,17 +4,19 @@ using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
-    [field : SerializeField] 
+    GameObject stage;
+
+    [field: SerializeField]
     public int Index { get; set; }
 
     SpriteRenderer sr;
 
-    [SerializeField] List<PreviousLocation> past; 
+    [SerializeField] List<PreviousLocation> past;
     [SerializeField] List<PreviousSprite> pastSprite;
     PreviousLocation pl;
     PreviousSprite ps;
 
-    const float moveDist = 0.7f;
+    float moveDist;
 
     const int up = -13;
     const int down = 13;
@@ -23,7 +25,6 @@ public class Ball : MonoBehaviour
 
     private void Awake()
     {
-        
         sr = GetComponent<SpriteRenderer>();
         past = new List<PreviousLocation>();
         pastSprite = new List<PreviousSprite>();
@@ -35,9 +36,17 @@ public class Ball : MonoBehaviour
             ps = PreviousSprite.Destroy;
     }
 
+    private void Start()
+    {
+        stage = GameObject.Find("Stage");
+        if (stage == null)
+            stage = GameObject.Find("Custom Stage");
+        moveDist = 0.7f * stage.transform.localScale.x;
+    }
+
     public void MoveUp(MoveType mt = MoveType.Current)
     {
-        if(mt == MoveType.Current)
+        if (mt == MoveType.Current)
             pl = PreviousLocation.Down;
 
         transform.position += Vector3.up * moveDist;

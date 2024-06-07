@@ -48,6 +48,11 @@ public class Administrator_Custom : MonoBehaviour
 
     public void PrevStage()
     {
+        SoundManager.Instance.StopBGM();
+        SoundManager.Instance.AllStopSFX();
+        SoundManager.Instance.PlaySFX(Sfx.Clear);
+
+        setMap.ResetScale();
         heart.Init();
         step.Reset_Step();
         setMap.StageInit();
@@ -57,13 +62,20 @@ public class Administrator_Custom : MonoBehaviour
         homes.Clear();
         past.Clear();
         PlayerPrefs.SetInt("Custom Stage", PlayerPrefs.GetInt("Custom Stage") - 1);
+        PlayerPrefs.Save();
 
         if (setMap.StageDataLoad())
             StartCoroutine(WaitSetMap());
+        setMap.SetScale();
     }
 
     public void NextStage()
     {
+        SoundManager.Instance.StopBGM();
+        SoundManager.Instance.AllStopSFX();
+        SoundManager.Instance.PlaySFX(Sfx.Clear);
+
+        setMap.ResetScale();
         heart.Init();
         step.Reset_Step();
         setMap.StageInit();
@@ -73,7 +85,8 @@ public class Administrator_Custom : MonoBehaviour
         homes.Clear();
         past.Clear();
         PlayerPrefs.SetInt("Custom Stage", PlayerPrefs.GetInt("Custom Stage") + 1);
-     
+        PlayerPrefs.Save();
+
         if (PlayerPrefs.GetInt("Custom Stage") > 50)
         {
             PlayerPrefs.SetInt("Custom Stage", 1);
@@ -81,6 +94,7 @@ public class Administrator_Custom : MonoBehaviour
             FindObjectOfType<Background>().BackgroundChange();
             stageUpButton.SetActive(false);
             stageDownButton.SetActive(false);
+            PlayerPrefs.Save();
             heart.Fill_All_Heart();
             stageText.Congratulations();
             step.TheEnd();
@@ -89,6 +103,7 @@ public class Administrator_Custom : MonoBehaviour
 
         if(setMap.StageDataLoad())
             StartCoroutine(WaitSetMap());
+        setMap.SetScale();
     }
 
     IEnumerator WaitSetMap()

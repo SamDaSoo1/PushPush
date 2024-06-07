@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class Home : MonoBehaviour
 {
+    [SerializeField] OriginalGameScene_ButtonEvent timeLeapBtn_original;
+    [SerializeField] CustomGameScene_ButtonEvent timeLeapBtn_custom;
+
     [field: SerializeField]
     public int Index { get; set; } = 0;
 
@@ -31,17 +34,27 @@ public class Home : MonoBehaviour
             ps = PreviousSprite.Destroy;
     }
 
+    private void Start()
+    {
+        timeLeapBtn_original = FindAnyObjectByType<OriginalGameScene_ButtonEvent>();
+        timeLeapBtn_custom = FindAnyObjectByType<CustomGameScene_ButtonEvent>();
+    }
+
     // 집안에 공이 들어오면 빨간 집으로 바꿈
     public void Ball_In()
     {
-        //ps = PreviousSprite.Destroy;
+        if (timeLeapBtn_original?.timeLeap == false || timeLeapBtn_custom?.timeLeap == false)
+        {
+            SoundManager.Instance.AllStopSFX();
+            SoundManager.Instance.PlaySFX(Sfx.Success);
+        }
         sr.sprite = sprites[1];
     }
 
     // 집 밖으로 공이 나가면 원래 집으로 바꿈
     public void Ball_Out()
     {
-        //ps = PreviousSprite.Normal;
+        
         sr.sprite = sprites[0];
     }
 

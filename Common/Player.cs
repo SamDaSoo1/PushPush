@@ -4,13 +4,15 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    GameObject stage;
+
     [field : SerializeField]
     public int Index { get; set; } = 0;
 
     [SerializeField] List<PreviousLocation> past;
     PreviousLocation pl;
 
-    const float moveDist = 0.7f;
+    float moveDist;
 
     const int up = -13;
     const int down = 13;
@@ -23,14 +25,21 @@ public class Player : MonoBehaviour
         pl = PreviousLocation.None;
     }
 
+    private void Start()
+    {
+        stage = GameObject.Find("Stage");
+        if(stage == null)
+            stage = GameObject.Find("Custom Stage");
+        moveDist = 0.7f * stage.transform.localScale.x;
+    }
+
     public void MoveUp(MoveType mt = MoveType.Current)
     {
         if (mt == MoveType.Current)
         {
             pl = PreviousLocation.Down;
             SaveThePast();
-        }
-            
+        }  
         transform.position += Vector3.up * moveDist;
         Index += up;
     }

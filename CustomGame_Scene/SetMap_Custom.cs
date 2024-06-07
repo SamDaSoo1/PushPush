@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -11,16 +12,20 @@ public class SetMap_Custom : MonoBehaviour
     [SerializeField] List<GameObject> cloneBlock;
     [SerializeField] List<Vector3> blockPos;
 
+    [SerializeField] GameObject bgd;
+    [SerializeField] GameObject canvas;
+
     public bool StageDataLoad_Complete { get; private set; }
 
     private void Awake()
     {
         blocks = GameObject.FindGameObjectsWithTag("Block").ToList();
-
-        foreach (GameObject block in blocks)
+        blocks.Sort((a, b) => 
         {
-            blockPos.Add(block.transform.position);
-        }
+            int numA = int.Parse(a.name);
+            int numB = int.Parse(b.name);
+            return numA.CompareTo(numB);
+        });
 
         blockSprites = new List<Sprite>();
         for (int i = 0; i < 6; i++)
@@ -30,7 +35,8 @@ public class SetMap_Custom : MonoBehaviour
 
         if (PlayerPrefs.HasKey("Custom Stage") == false)
         {
-            PlayerPrefs.SetInt("Custom Stage", 1);
+            PlayerPrefs.SetInt("Custom Stage", 1); 
+            PlayerPrefs.Save();
         }
     }
 
@@ -38,16 +44,35 @@ public class SetMap_Custom : MonoBehaviour
     {
         stageText = FindObjectOfType<StageText_Custom>();
         StageDataLoad();
+        transform.position = new Vector3(bgd.GetComponent<RectTransform>().position.x, bgd.GetComponent<RectTransform>().position.y, 0);
+
+        blockPos = new List<Vector3>();
+        foreach (GameObject block in blocks)
+        {
+            blockPos.Add(block.transform.position);
+        }
+
+        SetScale();
+    }
+
+    public void ResetScale()
+    {
+        transform.localScale = Vector3.one;
+    }
+
+    public void SetScale()
+    {
+        transform.localScale = new Vector3(canvas.transform.localScale.x / 0.0092592f, canvas.transform.localScale.y / 0.0092592f, canvas.transform.localScale.z / 0.0092592f);
     }
 
     public void StageInit()
     {
         StageDataLoad_Complete = false;
         int idx = 0;
+        
         foreach (GameObject block in blocks)
         {
-            block.transform.position = blockPos[idx++];
-
+            block.transform.position = blockPos[idx];
             SpriteRenderer sr = block.GetComponent<SpriteRenderer>();
             Home h = block.GetComponent<Home>();
             Ball b = block.GetComponent<Ball>();
@@ -63,6 +88,9 @@ public class SetMap_Custom : MonoBehaviour
             if (h != null) { DestroyImmediate(h); }
             if (b != null) { DestroyImmediate(b); }
             if (p != null) { DestroyImmediate(p); }
+
+            idx++;
+            
         }
 
         foreach (GameObject clone in cloneBlock)
@@ -77,25 +105,36 @@ public class SetMap_Custom : MonoBehaviour
     {
         GameObject go;
         string filePath;
-
+        TextAsset jsonFile;
+        StageData sd;
         stageText.TextUpdate();
 
+#if UNITY_EDITOR || UNITY_STANDALONE
         // JSON 파일의 경로
         filePath = "MapData/Custom/Stage" + PlayerPrefs.GetInt("Custom Stage").ToString();
         // JSON 파일 로드
-        TextAsset jsonFile = Resources.Load<TextAsset>(filePath);
-
+        jsonFile = Resources.Load<TextAsset>(filePath);
         if (jsonFile == null)
         {
             return false;
         }
-        
         // JSON 파일 내용 문자열로 변환
         string jsonText = jsonFile.text;
-        StageData sd = JsonUtility.FromJson<StageData>(jsonText);
+        sd = JsonUtility.FromJson<StageData>(jsonText);
+#elif UNITY_ANDROID
+        // JSON 파일 로드
+        string _jsonFile = PlayerPrefs.GetString("Custom Stage" + PlayerPrefs.GetInt("Custom Stage"));
+        if (string.IsNullOrEmpty(_jsonFile))
+        {
+            return false;
+        }
+        // JSON 파일 내용 문자열로 변환
+        sd = JsonUtility.FromJson<StageData>(_jsonFile);
+#endif
 
         List<int> blockIdx = sd.idx;
         List<BlockType> blockType = sd.blockType;
+
         for (int i = 0; i < blockIdx.Count; i++)
         {
             BlockType bt = blockType[i];

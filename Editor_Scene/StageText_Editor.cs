@@ -13,6 +13,7 @@ public class StageText_Editor : MonoBehaviour
     {
         cText = GetComponent<TextMeshProUGUI>();
         PlayerPrefs.SetInt("Editor Stage", 1);
+        PlayerPrefs.Save();
         TextUpdate();
     }
 

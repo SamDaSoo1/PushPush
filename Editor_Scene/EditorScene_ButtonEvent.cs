@@ -1,13 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class EditorScene_ButtonEvent : MonoBehaviour
 {
@@ -20,13 +18,15 @@ public class EditorScene_ButtonEvent : MonoBehaviour
     [SerializeField] StageData stageData;
     [SerializeField] TextMeshProUGUI saveTmp;
     StageLoad stageLoad;
-    
 
+    [SerializeField] GameObject line;
+    [SerializeField] SetMap_Editor setMap;
+    
     const float dist = 0.7f;
-    const float limit_Up = 4.5f;
-    const float limit_Down = -4.5f;
-    const float limit_Left = -8.5f;
-    const float limit_Right = 1f;
+
+    int limitX = 6;
+    int limitY = 6;
+
     float textOffset = 15;
 
     int idx = 84;
@@ -46,7 +46,14 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
         blocks = new List<SpriteRenderer>();
         List<GameObject> goList = GameObject.FindGameObjectsWithTag("Block").ToList();
-        foreach(GameObject go in goList)
+        goList.Sort((a, b) => 
+        {
+            int numA = int.Parse(a.name);
+            int numB = int.Parse(b.name);
+            return numA.CompareTo(numB);
+        });
+
+        foreach (GameObject go in goList)
         {
             blocks.Add(go.GetComponent<SpriteRenderer>());
         }
@@ -82,9 +89,13 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
     public void SaveButton_OnPointerUp()
     {
+        SoundManager.Instance.PlaySFX(Sfx.Success);
         saveText.rectTransform.anchoredPosition = new Vector2(saveText.rectTransform.anchoredPosition.x, saveText.rectTransform.anchoredPosition.y + textOffset);
 
-        if(saveTmp.enabled == true) { return; }
+        if(saveTmp.enabled == true) 
+        {
+            return; 
+        }
 
         stageData.idx.Clear();
         stageData.blockType.Clear();
@@ -126,14 +137,21 @@ public class EditorScene_ButtonEvent : MonoBehaviour
             }
         }
 
+#if UNITY_EDITOR
         // 데이터를 저장할 경로 지정
         string path = Path.Combine(Application.dataPath + "/Resources/MapData/Custom", "Stage" + PlayerPrefs.GetInt("Editor Stage") + ".json");
         // ToJson을 사용하면 JSON형태로 포멧팅된 문자열이 생성된다  
         string jsonData = JsonUtility.ToJson(stageData, true);
         // 파일 생성 및 저장
         File.WriteAllText(path, jsonData);
-        
-        if(saveTmp.enabled == false)
+#elif UNITY_ANDROID
+        // 데이터 직렬화
+        string jsonData = JsonUtility.ToJson(stageData, true);
+        // PlayerPrefs로 저장
+        PlayerPrefs.SetString("Custom Stage" + PlayerPrefs.GetInt("Editor Stage"), jsonData);
+#endif
+
+        if (saveTmp.enabled == false)
         {
             saveTmp.enabled = true;
             StartCoroutine(SaveTmp());
@@ -181,41 +199,53 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
     public void UpArrowClick()
     {
-        Vector3 nextMove = SelectBlock.transform.position + Vector3.up * dist;
-        if (nextMove.y > limit_Up)
+        Vector3 nextMove = SelectBlock.transform.position + Vector3.up * dist * line.transform.localScale.x;
+        if (limitY == 0)
             return;
 
+        SoundManager.Instance.PlaySFX(Sfx.Move);
         SelectBlock.transform.position = nextMove;
+
+        limitY -= 1;
         idx -= 13;
     }
 
     public void DownArrowClick()
     {
-        Vector3 nextMove = SelectBlock.transform.position + Vector3.down * dist;
-        if (nextMove.y < limit_Down)
+        Vector3 nextMove = SelectBlock.transform.position + Vector3.down * dist * line.transform.localScale.x;
+        if (limitY == 12)
             return;
 
+        SoundManager.Instance.PlaySFX(Sfx.Move);
         SelectBlock.transform.position = nextMove;
+
+        limitY += 1;
         idx += 13;
     }
 
     public void LeftArrowClick()
     {
-        Vector3 nextMove = SelectBlock.transform.position + Vector3.left * dist;
-        if (nextMove.x < limit_Left)
+        Vector3 nextMove = SelectBlock.transform.position + Vector3.left * dist * line.transform.localScale.x;
+        if (limitX == 0)
             return;
 
+        SoundManager.Instance.PlaySFX(Sfx.Move);
         SelectBlock.transform.position = nextMove;
+
+        limitX -= 1;
         idx -= 1;
     }
 
     public void RightArrowClick()
     {
-        Vector3 nextMove = SelectBlock.transform.position + Vector3.right * dist;
-        if (nextMove.x > limit_Right)
+        Vector3 nextMove = SelectBlock.transform.position + Vector3.right * dist * line.transform.localScale.x;
+        if (limitX == 12)
             return;
 
+        SoundManager.Instance.PlaySFX(Sfx.Move);
         SelectBlock.transform.position = nextMove;
+
+        limitX += 1;
         idx += 1;
     }
 
@@ -246,9 +276,12 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
         int stageNum = PlayerPrefs.GetInt("Editor Stage");
         PlayerPrefs.SetInt("Editor Stage", stageNum + 1);
+        PlayerPrefs.Save();
         stageText.TextUpdate();
 
+        setMap.ResetScale();
         stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
+        setMap.SetScale();
     }
 
     public void StageDownButton()
@@ -258,8 +291,11 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
         int stageNum = PlayerPrefs.GetInt("Editor Stage");
         PlayerPrefs.SetInt("Editor Stage", stageNum - 1);
+        PlayerPrefs.Save();
         stageText.TextUpdate();
 
+        setMap.ResetScale();
         stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
+        setMap.SetScale();
     }
 }
