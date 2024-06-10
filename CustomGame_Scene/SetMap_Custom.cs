@@ -113,7 +113,7 @@ public class SetMap_Custom : MonoBehaviour
 
         filePath = PlayerPrefs.GetString("Custom Stage" + PlayerPrefs.GetInt("Custom Stage"));
         PlayerPrefs.Save();
-        print(PlayerPrefs.GetInt("Custom Stage"));
+
         if (string.IsNullOrEmpty(filePath))
         {
             return false;

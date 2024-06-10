@@ -68,7 +68,7 @@ public class EditorScene_ButtonEvent : MonoBehaviour
         saveText = GameObject.Find("Save Button").GetComponentInChildren<TextMeshProUGUI>();
         stageLoad = FindObjectOfType<StageLoad>();
         stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
-        print("¿¡µðÅÍ: " + PlayerPrefs.GetInt("Editor Stage"));
+
         saveTmp = transform.Find("SaveTmp").GetComponent<TextMeshProUGUI>();
         saveTmp.enabled = false;
     }
