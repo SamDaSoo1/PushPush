@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -33,6 +34,12 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
     private void Start()
     {
+        if (PlayerPrefs.HasKey("Editor Stage") == false)
+        {
+            PlayerPrefs.SetInt("Editor Stage", 1);
+            PlayerPrefs.Save();
+        }
+
         stageText = FindObjectOfType<StageText_Editor>();
         SelectBlock = GameObject.FindWithTag("SelectBlock");
         SelectBlock.transform.position = new Vector3(-3.8f, 0f, 0f);
@@ -61,6 +68,7 @@ public class EditorScene_ButtonEvent : MonoBehaviour
         saveText = GameObject.Find("Save Button").GetComponentInChildren<TextMeshProUGUI>();
         stageLoad = FindObjectOfType<StageLoad>();
         stageLoad.MapLoad(blocks, PlayerPrefs.GetInt("Editor Stage"));
+        print("에디터: " + PlayerPrefs.GetInt("Editor Stage"));
         saveTmp = transform.Find("SaveTmp").GetComponent<TextMeshProUGUI>();
         saveTmp.enabled = false;
     }
@@ -94,6 +102,7 @@ public class EditorScene_ButtonEvent : MonoBehaviour
 
         if(saveTmp.enabled == true) 
         {
+            StartCoroutine(SaveTmp());
             return; 
         }
 
@@ -137,19 +146,12 @@ public class EditorScene_ButtonEvent : MonoBehaviour
             }
         }
 
-#if UNITY_EDITOR
-        // 데이터를 저장할 경로 지정
-        string path = Path.Combine(Application.dataPath + "/Resources/MapData/Custom", "Stage" + PlayerPrefs.GetInt("Editor Stage") + ".json");
-        // ToJson을 사용하면 JSON형태로 포멧팅된 문자열이 생성된다  
-        string jsonData = JsonUtility.ToJson(stageData, true);
-        // 파일 생성 및 저장
-        File.WriteAllText(path, jsonData);
-#elif UNITY_ANDROID
         // 데이터 직렬화
         string jsonData = JsonUtility.ToJson(stageData, true);
+
         // PlayerPrefs로 저장
         PlayerPrefs.SetString("Custom Stage" + PlayerPrefs.GetInt("Editor Stage"), jsonData);
-#endif
+        PlayerPrefs.Save();
 
         if (saveTmp.enabled == false)
         {

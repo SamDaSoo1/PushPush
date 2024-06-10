@@ -42,8 +42,11 @@ public class SetMap_Custom : MonoBehaviour
 
     private void Start()
     {
+        
         stageText = FindObjectOfType<StageText_Custom>();
+        
         StageDataLoad();
+        
         transform.position = new Vector3(bgd.GetComponent<RectTransform>().position.x, bgd.GetComponent<RectTransform>().position.y, 0);
 
         blockPos = new List<Vector3>();
@@ -105,32 +108,18 @@ public class SetMap_Custom : MonoBehaviour
     {
         GameObject go;
         string filePath;
-        TextAsset jsonFile;
         StageData sd;
         stageText.TextUpdate();
 
-#if UNITY_EDITOR || UNITY_STANDALONE
-        // JSON 파일의 경로
-        filePath = "MapData/Custom/Stage" + PlayerPrefs.GetInt("Custom Stage").ToString();
-        // JSON 파일 로드
-        jsonFile = Resources.Load<TextAsset>(filePath);
-        if (jsonFile == null)
+        filePath = PlayerPrefs.GetString("Custom Stage" + PlayerPrefs.GetInt("Custom Stage"));
+        PlayerPrefs.Save();
+        print(PlayerPrefs.GetInt("Custom Stage"));
+        if (string.IsNullOrEmpty(filePath))
         {
             return false;
         }
-        // JSON 파일 내용 문자열로 변환
-        string jsonText = jsonFile.text;
-        sd = JsonUtility.FromJson<StageData>(jsonText);
-#elif UNITY_ANDROID
-        // JSON 파일 로드
-        string _jsonFile = PlayerPrefs.GetString("Custom Stage" + PlayerPrefs.GetInt("Custom Stage"));
-        if (string.IsNullOrEmpty(_jsonFile))
-        {
-            return false;
-        }
-        // JSON 파일 내용 문자열로 변환
-        sd = JsonUtility.FromJson<StageData>(_jsonFile);
-#endif
+
+        sd = JsonUtility.FromJson<StageData>(filePath);
 
         List<int> blockIdx = sd.idx;
         List<BlockType> blockType = sd.blockType;
